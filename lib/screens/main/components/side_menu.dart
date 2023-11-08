@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:omc_sis_calendar/screens/MyResquestsScreen/my_requests_screen.dart';
+import 'package:omc_sis_calendar/screens/RequestsScreen/requeste_screen.dart';
 
 class SideMenu extends StatelessWidget {
-  const SideMenu({
-    Key? key,
-  }) : super(key: key);
+
+
+  final String userId;
+  final bool isAdmin;
+  SideMenu({required this.userId, required this.isAdmin});
 
   @override
   Widget build(BuildContext context) {
@@ -12,7 +16,9 @@ class SideMenu extends StatelessWidget {
       child: ListView(
         children: [
           DrawerHeader(
-            child: Image.asset("assets/images/logo.png"),
+            child: Image.asset(
+              "assets/images/logo.png",
+            ),
           ),
           DrawerListTile(
             title: "Dashboard",
@@ -20,39 +26,22 @@ class SideMenu extends StatelessWidget {
             press: () {},
           ),
           DrawerListTile(
-            title: "Transaction",
+            title: "Minhas Solicitações",
             svgSrc: "assets/icons/menu_tran.svg",
-            press: () {},
+            press: () => _navigateToMyTrips(context,userId),
           ),
-          DrawerListTile(
-            title: "Task",
+          if (isAdmin)
+            DrawerListTile(
+            title: "Solicitações (admin)",
             svgSrc: "assets/icons/menu_task.svg",
-            press: () {},
-          ),
+              press: () => _navigateToRequests(context,userId),
+            ),
           DrawerListTile(
-            title: "Documents",
-            svgSrc: "assets/icons/menu_doc.svg",
-            press: () {},
-          ),
-          DrawerListTile(
-            title: "Store",
-            svgSrc: "assets/icons/menu_store.svg",
-            press: () {},
-          ),
-          DrawerListTile(
-            title: "Notification",
-            svgSrc: "assets/icons/menu_notification.svg",
-            press: () {},
-          ),
-          DrawerListTile(
-            title: "Profile",
-            svgSrc: "assets/icons/menu_profile.svg",
-            press: () {},
-          ),
-          DrawerListTile(
-            title: "Settings",
+            title: "Sair",
             svgSrc: "assets/icons/menu_setting.svg",
-            press: () {},
+            press: () {
+              Navigator.pushReplacementNamed(context, '/');
+            },
           ),
         ],
       ),
@@ -60,10 +49,27 @@ class SideMenu extends StatelessWidget {
   }
 }
 
+void _navigateToRequests(BuildContext context, String userId) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => Requests(userId: userId,),
+    ),
+  );
+}
+
+void _navigateToMyTrips(BuildContext context, String userId) {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => MyRequests(userId: userId,),
+    ),
+  );
+}
+
 class DrawerListTile extends StatelessWidget {
   const DrawerListTile({
     Key? key,
-    // For selecting those three line once press "Command+D"
     required this.title,
     required this.svgSrc,
     required this.press,
