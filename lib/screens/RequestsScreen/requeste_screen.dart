@@ -8,21 +8,20 @@ class Requests extends StatelessWidget {
 
   Requests({required this.userId});
 
-  Future<List<Map<String, dynamic>>> _getTripsForUser(String userId) async {
+  Stream<List<Map<String, dynamic>>> _getTripsForUserStream(String userId) async* {
     var db = await mongo.Db.create(
       'mongodb+srv://josewlds:omcapps@cluster0.bnxdvmv.mongodb.net/omcapps?retryWrites=true&w=majority',
     );
     await db.open();
 
-    var trips = await db
-        .collection('trips')
-        .find()
-        .toList();
+    var trips = await db.collection('trips').find().toList();
 
     await db.close();
 
-    return trips;
+
+    yield trips.cast<Map<String, dynamic>>().toList();
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -34,8 +33,8 @@ class Requests extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _getTripsForUser(userId),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: _getTripsForUserStream(userId),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
@@ -94,7 +93,6 @@ class Requests extends StatelessWidget {
                     .toList(),
               ),
             );
-
           }
         },
       ),
@@ -105,7 +103,6 @@ class Requests extends StatelessWidget {
     final difference = endDate.difference(startDate);
     return difference.inDays;
   }
-
 
   Widget _buildStatusIndicator(String? status) {
     Color color;
@@ -138,7 +135,6 @@ class Requests extends StatelessWidget {
     String formattedStartDate = DateFormat('dd/MM/yyyy').format(trip['startDate'].toLocal());
     String formattedEndDate = DateFormat('dd/MM/yyyy').format(trip['endDate'].toLocal());
 
-
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -165,6 +161,7 @@ class Requests extends StatelessWidget {
                       onPressed: () {
                         updateTripStatus(trip['_id'].$oid.toString(), 'Aprovado');
                         Navigator.pop(context);
+                        _reloadPage(context);
                       },
                       style: ElevatedButton.styleFrom(primary: Colors.green),
                       child: Text('Aprovar'),
@@ -173,6 +170,7 @@ class Requests extends StatelessWidget {
                       onPressed: () {
                         updateTripStatus(trip['_id'].$oid.toString(), 'Recusado');
                         Navigator.pop(context);
+                        _reloadPage(context);
                       },
                       style: ElevatedButton.styleFrom(primary: Colors.red),
                       child: Text('Rejeitar'),
@@ -187,15 +185,21 @@ class Requests extends StatelessWidget {
     );
   }
 
+  void _reloadPage(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (BuildContext context) => Requests(userId: userId),
+      ),
+    );
+  }
+
   Future<void> updateTripStatus(String tripId, String newStatus) async {
     try {
       var db = await mongo.Db.create(
         'mongodb+srv://josewlds:omcapps@cluster0.bnxdvmv.mongodb.net/omcapps?retryWrites=true&w=majority',
       );
       await db.open();
-
-
-
 
       await db.collection('trips').update(
         mongo.where.eq('_id', mongo.ObjectId.parse(tripId)),
@@ -208,5 +212,4 @@ class Requests extends StatelessWidget {
       throw e;
     }
   }
-
 }

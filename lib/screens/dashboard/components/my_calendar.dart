@@ -37,7 +37,7 @@ class MyCalendarWidget extends StatefulWidget {
 final GlobalKey<_MyCalendarWidgetState> calendarKey = GlobalKey<_MyCalendarWidgetState>();
 
 class _MyCalendarWidgetState extends State<MyCalendarWidget> {
-  late List<Event> _events;
+  late List<Event> _events = [];
   late DateTime? _rangeStart;
   late DateTime? _rangeEnd;
   late StreamController<List<Event>> _eventsController;

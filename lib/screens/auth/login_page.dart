@@ -43,10 +43,10 @@ class LoginPage extends StatelessWidget {
                   width: 200,
                   child: TextField(
                     controller: usernameController,
-                    style: TextStyle(color: Colors.black),
+                    style: TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: 'Login',
-                      labelStyle: TextStyle(color: Colors.black),
+                      labelStyle: TextStyle(color: Colors.white),
                       border: OutlineInputBorder(),
                     ),
                   ),
@@ -57,10 +57,10 @@ class LoginPage extends StatelessWidget {
                   child: TextField(
                     controller: passwordController,
                     obscureText: true,
-                    style: TextStyle(color: Colors.black),
+                    style: TextStyle(color: Colors.white),
                     decoration: const InputDecoration(
                       labelText: 'Password',
-                      labelStyle: TextStyle(color: Colors.black),
+                      labelStyle: TextStyle(color: Colors.white),
                       border: OutlineInputBorder(),
                     ),
                   ),
