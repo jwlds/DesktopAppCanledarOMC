@@ -54,6 +54,9 @@ class _MyCalendarWidgetState extends State<MyCalendarWidget> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+      Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
         ElevatedButton.icon(
           style: TextButton.styleFrom(
             padding: EdgeInsets.symmetric(
@@ -62,12 +65,14 @@ class _MyCalendarWidgetState extends State<MyCalendarWidget> {
             ),
           ),
           onPressed: () {
-            _openAddModal(context,widget.userId);
+            _openAddModal(context, widget.userId);
           },
           icon: Icon(Icons.add),
           label: Text("Solicitação"),
         ),
-        SizedBox(height: 16), // Adjust the height based on your design
+      ],
+      ),
+        SizedBox(height: 16),
     CleanCalendar(
     datesForStreaks: _generateTripDates(),
     currentDateProperties: DatesProperties(

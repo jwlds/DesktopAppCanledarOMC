@@ -28,7 +28,7 @@ class Requests extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('My Requests'),
+        title: Text('Solicitações'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () => Navigator.of(context).pop(),
@@ -52,39 +52,47 @@ class Requests extends StatelessWidget {
           } else {
             List<Map<String, dynamic>> trips = snapshot.data!;
 
-            return ListView.builder(
-              itemCount: trips.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  elevation: 5,
-                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(16),
-                    title: Text(
-                      'Tipo de Viagem: ${trips[index]['tripType']}',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Data de Saída: ${trips[index]['startDate']}',
-                          style: TextStyle(fontSize: 16),
+            return Container(
+              width: double.infinity,
+              child: DataTable(
+                columns: [
+                  DataColumn(label: Text('Colaborador')),
+                  DataColumn(label: Text('Status')),
+                  DataColumn(label: Text('Data de Saída')),
+                  DataColumn(label: Text('Data de Retorno')),
+                  DataColumn(label: Text('Deduzido')),
+                  DataColumn(label: Text('Tipo')),
+                ],
+                rows: trips
+                    .map(
+                      (trip) => DataRow(
+                    cells: [
+                      DataCell(Text(trip['requester'])),
+                      DataCell(
+                        Row(
+                          children: [
+                            _buildStatusIndicator(trip['status']),
+                            SizedBox(width: 8),
+                            Text(trip['status']),
+                          ],
                         ),
-                        Text(
-                          'Data de Retorno: ${trips[index]['endDate']}',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                        Text(
-                          'Origem: ${trips[index]['origin']} | Destino: ${trips[index]['destination']}',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
-                    onTap: () => _showTripDetailsModal(context, trips[index]),
+                      ),
+                      DataCell(Text(DateFormat('dd/MM/yyyy').format(trip['startDate'].toLocal()))),
+                      DataCell(Text(DateFormat('dd/MM/yyyy').format(trip['endDate'].toLocal()))),
+                      DataCell(
+                        Text('${_calculateDaysDifference(trip['startDate'], trip['endDate'])} dias'),
+                      ),
+                      DataCell(Text(trip['tripType'])),
+                    ],
+                    onSelectChanged: (selected) {
+                      if (selected!) {
+                        _showTripDetailsModal(context, trip);
+                      }
+                    },
                   ),
-                );
-              },
+                )
+                    .toList(),
+              ),
             );
 
           }
@@ -93,9 +101,43 @@ class Requests extends StatelessWidget {
     );
   }
 
+  int _calculateDaysDifference(DateTime startDate, DateTime endDate) {
+    final difference = endDate.difference(startDate);
+    return difference.inDays;
+  }
+
+
+  Widget _buildStatusIndicator(String? status) {
+    Color color;
+    switch (status?.toLowerCase()) {
+      case 'pendente':
+        color = Colors.orange;
+        break;
+      case 'aprovado':
+        color = Colors.green;
+        break;
+      case 'recusado':
+        color = Colors.red;
+        break;
+      default:
+        color = Colors.grey;
+        break;
+    }
+
+    return Container(
+      width: 12,
+      height: 12,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+      ),
+    );
+  }
+
   void _showTripDetailsModal(BuildContext context, Map<String, dynamic> trip) {
     String formattedStartDate = DateFormat('dd/MM/yyyy').format(trip['startDate'].toLocal());
     String formattedEndDate = DateFormat('dd/MM/yyyy').format(trip['endDate'].toLocal());
+
 
     showDialog(
       context: context,
@@ -108,10 +150,35 @@ class Requests extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Tipo de Viagem: ${trip['tripType']}'),
+                Text('Colaborador: ${trip['requester']}'),
+                Text('Tipo: ${trip['tripType']}'),
                 Text('Data de Saída: $formattedStartDate'),
                 Text('Data de Retorno: $formattedEndDate'),
+                Text('Dias ausentes: ${_calculateDaysDifference(trip['startDate'], trip['endDate'])} dias'),
                 Text('Descrição: ${trip['description']}'),
+                Text('Status: ${trip['status']}'),
+                SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                      onPressed: () {
+                        updateTripStatus(trip['_id'].$oid.toString(), 'Aprovado');
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(primary: Colors.green),
+                      child: Text('Aprovar'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        updateTripStatus(trip['_id'].$oid.toString(), 'Recusado');
+                        Navigator.pop(context);
+                      },
+                      style: ElevatedButton.styleFrom(primary: Colors.red),
+                      child: Text('Rejeitar'),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -119,4 +186,27 @@ class Requests extends StatelessWidget {
       },
     );
   }
+
+  Future<void> updateTripStatus(String tripId, String newStatus) async {
+    try {
+      var db = await mongo.Db.create(
+        'mongodb+srv://josewlds:omcapps@cluster0.bnxdvmv.mongodb.net/omcapps?retryWrites=true&w=majority',
+      );
+      await db.open();
+
+
+
+
+      await db.collection('trips').update(
+        mongo.where.eq('_id', mongo.ObjectId.parse(tripId)),
+        mongo.modify.set('status', newStatus),
+      );
+
+      await db.close();
+    } catch (e) {
+      print('Error updating trip status: $e');
+      throw e;
+    }
+  }
+
 }
