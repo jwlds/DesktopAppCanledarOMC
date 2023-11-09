@@ -1,7 +1,25 @@
+import 'package:clean_calendar/clean_calendar.dart';
 import 'package:flutter/material.dart';
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 import 'package:intl/intl.dart';
 import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:table_calendar/table_calendar.dart';
+import 'package:gantt_chart/gantt_chart.dart';
+class GanttTask {
+  final String id;
+  final String name;
+  final DateTime start;
+  final DateTime end;
+
+  GanttTask({
+    required this.id,
+    required this.name,
+    required this.start,
+    required this.end,
+  });
+}
+
 
 class Requests extends StatelessWidget {
   final String userId;
@@ -61,6 +79,7 @@ class Requests extends StatelessWidget {
                   DataColumn(label: Text('Data de Retorno')),
                   DataColumn(label: Text('Deduzido')),
                   DataColumn(label: Text('Tipo')),
+                  DataColumn(label: Text('Ações')),
                 ],
                 rows: trips
                     .map(
@@ -82,6 +101,14 @@ class Requests extends StatelessWidget {
                         Text('${_calculateDaysDifference(trip['startDate'], trip['endDate'])} dias'),
                       ),
                       DataCell(Text(trip['tripType'])),
+                      DataCell(
+                        ElevatedButton(
+                          onPressed: () {
+                            _openCalendarDialog(context, trip['startDate'], trip['endDate']);
+                          },
+                          child: Text('Ver Calendario'),
+                        ),
+                      ),
                     ],
                     onSelectChanged: (selected) {
                       if (selected!) {
@@ -99,6 +126,89 @@ class Requests extends StatelessWidget {
     );
   }
 
+
+  void _openCalendarDialog(BuildContext context, DateTime startDate, DateTime endDate) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Calendário'),
+          content: Container(
+            width: 300.0,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Data de Início: ${DateFormat('dd/MM/yyyy').format(startDate.toLocal())}'),
+                Text('Data de Término: ${DateFormat('dd/MM/yyyy').format(endDate.toLocal())}'),
+                SizedBox(height: 16),
+                _buildCalendar(startDate, endDate),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildCalendar(DateTime startDate, DateTime endDate) {
+   return CleanCalendar(
+      datesForStreaks: generateDateRange(startDate, endDate),
+      currentDateProperties: DatesProperties(
+        datesDecoration: DatesDecoration(
+          datesBorderRadius: 1000,
+          datesBackgroundColor: Colors.lightBlue.shade100,
+          datesBorderColor: Colors.blue,
+          datesTextColor: Colors.black,
+        ),
+      ),
+      weekdaysSymbol: const Weekdays(
+        sunday: "dom",
+        monday: "seg",
+        tuesday: "ter",
+        wednesday: "qua",
+        thursday: "qui",
+        friday: "sex",
+        saturday: "sab",
+      ),
+      monthsSymbol: const Months(
+        january: "Janeiro",
+        february: "Fevereiro",
+        march: "Março",
+        april: "Abril",
+        may: "Maio",
+        june: "Junho",
+        july: "Julho",
+        august: "Agosto",
+        september: "Setembro",
+        october: "Outubro",
+        november: "Novembro",
+        december: "Dezembro",
+      ),
+      streakDatesProperties: DatesProperties(
+        // trips days
+        datesDecoration: DatesDecoration(
+          datesBorderRadius: 1000,
+          datesBackgroundColor: Colors.blue,
+          datesBorderColor: Colors.blue,
+          datesTextColor: Colors.white,
+        ),
+      ),
+      leadingTrailingDatesProperties: DatesProperties(
+        datesDecoration: DatesDecoration(
+          datesBorderRadius: 1000,
+        ),
+      ),
+    );
+  }
+
+  List<DateTime> generateDateRange(DateTime start, DateTime end) {
+    List<DateTime> dateRange = [];
+    for (DateTime date = start; date.isBefore(end.add(Duration(days: 1))); date = date.add(Duration(days: 1))) {
+      dateRange.add(date);
+    }
+    return dateRange;
+  }
   int _calculateDaysDifference(DateTime startDate, DateTime endDate) {
     final difference = endDate.difference(startDate);
     return difference.inDays;
@@ -213,3 +323,5 @@ class Requests extends StatelessWidget {
     }
   }
 }
+
+
