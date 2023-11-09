@@ -341,17 +341,20 @@ class Requests extends StatelessWidget {
   }
 
 
-  Future<void> _showTripDetailsModal(BuildContext context, Map<String, dynamic> trip, User user) {
+  Future<void> _showTripDetailsModal(BuildContext context, Map<String, dynamic> trip, User user) async {
     String formattedStartDate = DateFormat('dd/MM/yyyy').format(trip['startDate'].toLocal());
     String formattedEndDate = DateFormat('dd/MM/yyyy').format(trip['endDate'].toLocal());
 
     Completer<void> completer = Completer<void>();
 
-    showDialog(
+    bool isRejected = false;
+    String rejectionReason = '';
+
+    await showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Detalhes Detalhes da Solicitação'),
+          title: Text('Detalhes da Solicitação'),
           content: SizedBox(
             width: 300.0,
             child: Column(
@@ -366,44 +369,53 @@ class Requests extends StatelessWidget {
                 Text('Descrição: ${trip['description']}'),
                 Text('Status: ${trip['status']}'),
                 SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    ElevatedButton(
-                      onPressed: () {
-                        updateTripStatus(trip['_id'].$oid.toString(), 'Aprovado');
-                        sendEmail(
-                          name:  user.name,
-                          email: user.login,
-                          subject: 'Resposta da Solicitação de ausência OMC GROUP',
-                          message: 'Aprovado',
-                        );
-                        Navigator.pop(context);
-                        _reloadPage(context);
-                        completer.complete(); // Complete the future when done
-                      },
-                      style: ElevatedButton.styleFrom(primary: Colors.green),
-                      child: Text('Aprovar'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        updateTripStatus(trip['_id'].$oid.toString(), 'Recusado');
-                        sendEmail(
-                          name:  user.name,
-                          email: user.login,
-                          subject: 'Resposta da Solicitação de ausência OMC GROUP',
-                          message: 'Recusado',
-                        );
+                if (trip['status'] == 'Pendente')
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      ElevatedButton(
+                        onPressed: () {
+                          updateTripStatus(trip['_id'].$oid.toString(), 'Aprovado');
+                          sendEmail(
+                            name: user.name,
+                            email: user.login,
+                            subject: 'Resposta da Solicitação de ausência OMC GROUP',
+                            message: 'Aprovado',
+                          );
+                          Navigator.pop(context);
+                          _reloadPage(context);
+                          completer.complete();
+                        },
+                        style: ElevatedButton.styleFrom(primary: Colors.green),
+                        child: Text('Aprovar'),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          // Abre o modal para adicionar motivo
+                          String? reason = await _showRejectionModal(context);
+                          if (reason != null) {
+                            isRejected = true;
+                            rejectionReason = reason;
 
-                        Navigator.pop(context);
-                        _reloadPage(context);
-                        completer.complete(); // Complete the future when done
-                      },
-                      style: ElevatedButton.styleFrom(primary: Colors.red),
-                      child: Text('Rejeitar'),
-                    ),
-                  ],
-                ),
+                            // Envie o email e atualize o status
+                            sendEmail(
+                              name: user.name,
+                              email: user.login,
+                              subject: 'Resposta da Solicitação de ausência OMC GROUP',
+                              message: 'Rejeitado. Motivo: $rejectionReason',
+                            );
+                            updateTripStatus(trip['_id'].$oid.toString(), 'Recusado');
+                          }
+
+                          Navigator.pop(context); // Feche o modal após todas as operações
+                          _reloadPage(context);
+                          completer.complete();
+                        },
+                        style: ElevatedButton.styleFrom(primary: Colors.red),
+                        child: Text('Rejeitar'),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -411,8 +423,48 @@ class Requests extends StatelessWidget {
       },
     );
 
-    return completer.future; // Return the future
+    return completer.future;
   }
+
+  Future<String?> _showRejectionModal(BuildContext context) async {
+    Completer<String?> completer = Completer<String?>();
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        String rejectionReason = '';
+        return AlertDialog(
+          title: Text('Motivo da Rejeição'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Informe o motivo da rejeição:'),
+              TextField(
+                onChanged: (value) {
+                  rejectionReason = value;
+                },
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () {
+                  completer.complete(rejectionReason);
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(primary: Colors.red),
+                child: Text('Confirmar'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    return completer.future;
+  }
+
 
 
   void _reloadPage(BuildContext context) {

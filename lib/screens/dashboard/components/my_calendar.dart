@@ -281,15 +281,15 @@ class _AddModalState extends State<AddModal> {
     super.initState();
     _selectedStartDate = DateTime.now();
     _selectedEndDate = DateTime.now();
-    _selectedTripType = 'ferias';
+    _selectedTripType = 'Selecione o tipo da ausência';
     _description = '';
-    _requester = ''; // Initialize with an empty string
+    _requester = '';
     _loadRequesterName();
   }
 
   Future<void> _loadRequesterName() async {
     String? requester = await getUserName(widget.userId);
-    _requester = requester ?? ''; // Use an empty string if requester is null
+    _requester = requester ?? '';
     setState(() {
       _isRequesterLoaded = true;
     });
@@ -326,7 +326,7 @@ class _AddModalState extends State<AddModal> {
                 });
               },
               items: [
-                ...<String>['Selecione o motivo da ausência', 'ferias', 'trabalho', 'medico']
+                ...<String>['Selecione o tipo da ausência','Férias', 'Folga', 'Médico']
                     .map<DropdownMenuItem<String>>((String value) {
                   return DropdownMenuItem<String>(
                     value: value,
@@ -487,10 +487,13 @@ class _AddModalState extends State<AddModal> {
 
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
+    DateTime initialDate = isStartDate ? _selectedStartDate : _selectedEndDate;
+    DateTime currentDate = DateTime.now();
+
     DateTime? selectedDate = await showDatePicker(
       context: context,
-      initialDate: isStartDate ? _selectedStartDate : _selectedEndDate,
-      firstDate: DateTime(2000),
+      initialDate: initialDate.isBefore(currentDate) ? currentDate : initialDate,
+      firstDate: currentDate,
       lastDate: DateTime(2050),
     );
 
@@ -504,6 +507,7 @@ class _AddModalState extends State<AddModal> {
       });
     }
   }
+
 
   Future<void> _saveDataToDatabase(String id) async {
     String userId = id;
