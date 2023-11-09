@@ -86,7 +86,7 @@ class LoginPage extends StatelessWidget {
                             create: (context) => MenuAppController(),
                             child: MainScreen(
                               title: 'OMC Group',
-                              userId: user['_id'].toString(),
+                              userId: user['_id'].$oid.toString(),
                               isAdmin: user['admin'] ?? false,
                             ),
                           ),

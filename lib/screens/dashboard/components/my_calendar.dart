@@ -476,13 +476,15 @@ class _AddModalState extends State<AddModal> {
 
 
 Future<String?> getUserName(String userId) async {
+
+
   var db = await mongo.Db.create(
     'mongodb+srv://josewlds:omcapps@cluster0.bnxdvmv.mongodb.net/omcapps?retryWrites=true&w=majority',
   );
 
   await db.open();
 
-  var user = await db.collection('users').findOne(mongo.where.eq('userId', userId));
+  var user = await db.collection('users').findOne(mongo.where.eq('_id', mongo.ObjectId.parse(userId)));
 
   await db.close();
 
