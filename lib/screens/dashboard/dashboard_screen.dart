@@ -33,7 +33,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  flex: 30, // Adjust the flex factor according to your preference
+                  flex: 30,
                   child: Column(
                     children: [
                       if (widget.isAdmin)

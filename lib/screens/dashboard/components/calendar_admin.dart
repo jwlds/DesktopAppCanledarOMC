@@ -4,6 +4,7 @@ import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 
 class CalendarAdm extends StatefulWidget {
   final String userId;
@@ -15,11 +16,18 @@ class CalendarAdm extends StatefulWidget {
 
 class _CalendarAdmState extends State<CalendarAdm> {
   List<Appointment> appointments = [];
+  Timer? timer;
 
   @override
   void initState() {
     super.initState();
-    _loadEvents();
+    timer = Timer.periodic(Duration(seconds: 1), (Timer t) => _loadEvents());
+  }
+
+  @override
+  void dispose() {
+    timer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadEvents() async {
@@ -29,11 +37,19 @@ class _CalendarAdmState extends State<CalendarAdm> {
       List<Event> events = [];
 
       for (var trip in trips) {
+        Color background = const Color(0xFFFFFFFF);
         DateTime startDate = trip['startDate'];
         DateTime endDate = trip['endDate'];
         String description = trip['requester'];
+        if(trip['tripType'] == 'Folga') {
+          background = const Color(0xFFF6FF00);
+        } else if(trip['tripType'] == 'Férias') {
+          background = const Color(0xFF0F8644);
+        } else {
+          background = Colors.lightBlue;
+        }
 
-        events.add(Event(startDate, endDate, description));
+        events.add(Event(startDate, endDate, description,background));
       }
 
       setState(() {
@@ -86,7 +102,7 @@ class _CalendarAdmState extends State<CalendarAdm> {
         startTime: event.startDate,
         endTime: event.endDate,
         subject: event.description,
-        color: Colors.blue,
+        color: event.background,
         isAllDay: false,
       ));
     }
@@ -137,8 +153,9 @@ class Event {
   final DateTime startDate;
   final DateTime endDate;
   final String description;
+  final Color background;
 
-  Event(this.startDate, this.endDate, this.description);
+  Event(this.startDate, this.endDate, this.description,this.background);
 }
 
 class MeetingDataSource extends CalendarDataSource {
