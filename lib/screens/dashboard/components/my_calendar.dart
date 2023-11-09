@@ -13,8 +13,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
-
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import '../../../constants.dart';
+
+import 'dart:io';
+
 
 
 class Event {
@@ -270,6 +274,7 @@ class _AddModalState extends State<AddModal> {
   late String _selectedTripType;
   late String _description;
   late String _requester;
+  bool _isRequesterLoaded = false;
 
   @override
   void initState() {
@@ -278,8 +283,18 @@ class _AddModalState extends State<AddModal> {
     _selectedEndDate = DateTime.now();
     _selectedTripType = 'ferias';
     _description = '';
-    _requester = '';
+    _requester = ''; // Initialize with an empty string
+    _loadRequesterName();
   }
+
+  Future<void> _loadRequesterName() async {
+    String? requester = await getUserName(widget.userId);
+    _requester = requester ?? ''; // Use an empty string if requester is null
+    setState(() {
+      _isRequesterLoaded = true;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -296,6 +311,7 @@ class _AddModalState extends State<AddModal> {
                   _requester = value;
                 });
               },
+              controller: _isRequesterLoaded ? TextEditingController(text: _requester) : null,
               decoration: InputDecoration(
                 labelText: 'Solicitante',
                 border: OutlineInputBorder(),
@@ -385,8 +401,14 @@ class _AddModalState extends State<AddModal> {
                 setState(() {
                   _isSaving = true;
                 });
-
+                // User user = await getUserById(widget.userId);
                 await _saveDataToDatabase(widget.userId);
+                await sendEmail(
+                  name:  _requester,
+                  email: "jose.wls.dev@gmail.com",
+                  subject: 'Solictacao de ausência OMC GROUP',
+                  message: 'This is a test message.',
+                );
 
                 setState(() {
                   _isSaving = false;
@@ -427,6 +449,42 @@ class _AddModalState extends State<AddModal> {
       ),
     );
   }
+
+  Future sendEmail({
+    required String name,
+    required String email,
+    required String subject,
+    required String message,
+
+  }) async {
+
+    final serviceId = 'service_k1srwdp';
+    final templateId = 'template_67o9g3h';
+    final userId = 'GVt4sKmkIYM8g7vEY';
+
+    final url = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-type':'application/json'
+      },body: json.encode({
+      'service_id': serviceId,
+      'template_id': templateId,
+      'user_id':userId,
+      'template_params': {
+        'user_name':name,
+        'user_email':email,
+        'user_subject': subject,
+        'user_message': message
+      }
+    }),
+    );
+    print(response.body);
+  }
+
+
+
+
 
   Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     DateTime? selectedDate = await showDatePicker(

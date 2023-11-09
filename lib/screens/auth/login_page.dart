@@ -8,14 +8,27 @@ import 'package:omc_sis_calendar/screens/dashboard/dashboard_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({Key? key}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    TextEditingController usernameController = TextEditingController();
-    TextEditingController passwordController = TextEditingController();
+  _LoginPageState createState() => _LoginPageState();
+}
 
+class _LoginPageState extends State<LoginPage> {
+  late TextEditingController usernameController;
+  late TextEditingController passwordController;
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    usernameController = TextEditingController();
+    passwordController = TextEditingController();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       body: Row(
         children: [
@@ -67,7 +80,13 @@ class LoginPage extends StatelessWidget {
                 ),
                 const SizedBox(height: 32),
                 ElevatedButton(
-                  onPressed: () async {
+                  onPressed: isLoading
+                      ? null
+                      : () async {
+                    setState(() {
+                      isLoading = true;
+                    });
+
                     String login = usernameController.text;
                     String password = passwordController.text;
 
@@ -92,16 +111,28 @@ class LoginPage extends StatelessWidget {
                           ),
                         ),
                       );
-
                     } else {
-                      print('Login failed. Please check your credentials.');
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Login ou senha incorretos.'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
                     }
+
+                    setState(() {
+                      isLoading = false;
+                    });
                   },
                   style: ElevatedButton.styleFrom(
                     primary: Colors.blue[900],
                     minimumSize: const Size(200, 50),
                   ),
-                  child: const Text('Entrar', style: TextStyle(color: Colors.white)),
+                  child: isLoading
+                      ? CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  )
+                      : const Text('Entrar', style: TextStyle(color: Colors.white)),
                 ),
               ],
             ),

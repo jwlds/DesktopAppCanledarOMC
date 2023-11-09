@@ -142,7 +142,7 @@ class MyRequests extends StatelessWidget {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Detalhes da Viagem'),
+          title: Text('Detalhes da Solicitação'),
           content: Container(
             width: 300.0,
             child: Column(
@@ -154,7 +154,7 @@ class MyRequests extends StatelessWidget {
                 Text('Data de Retorno: $formattedEndDate'),
                 Text('Dias ausentes:${_calculateDaysDifference(trip['startDate'], trip['endDate'])} dias'),
                 Text('Descrição: ${trip['description']}'),
-                Text('Status: $formattedStartDate'),
+                Text('Status: ${trip['status']}'),
               ],
             ),
           ),

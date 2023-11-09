@@ -50,6 +50,7 @@ dependencies:
   flutter_riverpod: ^2.4.5
   gantt_chart: ^0.3.0
   table_calendar: ^3.0.9
+  http: ^1.1.0
 
 dev_dependencies:
   flutter_test:

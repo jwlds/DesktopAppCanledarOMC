@@ -6,6 +6,27 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:gantt_chart/gantt_chart.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+class User {
+  final String id;
+  final String login;
+  final String password;
+  final bool admin;
+  final String cargo;
+  final String name;
+
+  User({
+    required this.id,
+    required this.login,
+    required this.password,
+    required this.admin,
+    required this.cargo,
+    required this.name,
+  });
+}
+
 class GanttTask {
   final String id;
   final String name;
@@ -24,8 +45,20 @@ class GanttTask {
 class Requests extends StatelessWidget {
   final String userId;
 
-  Requests({required this.userId});
+  late User user;
 
+  Requests({required this.userId}) {
+    _initUser();
+  }
+
+  Future<void> _initUser() async {
+    try {
+      user = await getUserById(userId);
+    } catch (e) {
+      print('Error initializing user: $e');
+      // Handle error appropriately
+    }
+  }
   Stream<List<Map<String, dynamic>>> _getTripsForUserStream(String userId) async* {
     var db = await mongo.Db.create(
       'mongodb+srv://josewlds:omcapps@cluster0.bnxdvmv.mongodb.net/omcapps?retryWrites=true&w=majority',
@@ -112,7 +145,7 @@ class Requests extends StatelessWidget {
                     ],
                     onSelectChanged: (selected) {
                       if (selected!) {
-                        _showTripDetailsModal(context, trip);
+                        _showTripDetailsModal(context, trip,user);
                       }
                     },
                   ),
@@ -124,6 +157,41 @@ class Requests extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<User> getUserById(String userId) async {
+    try {
+      var db = await mongo.Db.create(
+        'mongodb+srv://josewlds:omcapps@cluster0.bnxdvmv.mongodb.net/omcapps?retryWrites=true&w=majority',
+      );
+
+      await db.open();
+
+      var userMap = await db
+          .collection('users')
+          .findOne(mongo.where.eq('_id', mongo.ObjectId.parse(userId)));
+
+      await db.close();
+
+      if (userMap != null) {
+        return User(
+          id: userMap['_id'].toString(),
+          login: userMap['login'] ?? '',
+          password: userMap['password'] ?? '',
+          admin: userMap['admin'] ?? false,
+          cargo: userMap['cargo'] ?? '',
+          name: userMap['name'] ?? '',
+        );
+      } else {
+        print('User not found');
+        // You can throw an exception or return a default user if needed
+        throw Exception('User not found');
+      }
+    } catch (e) {
+      print('Error fetching user: $e');
+      // You can throw an exception or return a default user if needed
+      throw Exception('Error fetching user');
+    }
   }
 
 
@@ -240,17 +308,51 @@ class Requests extends StatelessWidget {
       ),
     );
   }
+  Future sendEmail({
+    required String name,
+    required String email,
+    required String subject,
+    required String message,
 
-  void _showTripDetailsModal(BuildContext context, Map<String, dynamic> trip) {
+  }) async {
+
+    final serviceId = 'service_k1srwdp';
+    final templateId = 'template_pk75q0d';
+    final userId = 'GVt4sKmkIYM8g7vEY';
+
+    final url = Uri.parse('https://api.emailjs.com/api/v1.0/email/send');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-type':'application/json'
+      },body: json.encode({
+      'service_id': serviceId,
+      'template_id': templateId,
+      'user_id':userId,
+      'template_params': {
+        'user_name':name,
+        'user_email':email,
+        'user_subject': subject,
+        'user_message': message
+      }
+    }),
+    );
+    print(response.body);
+  }
+
+
+  Future<void> _showTripDetailsModal(BuildContext context, Map<String, dynamic> trip, User user) {
     String formattedStartDate = DateFormat('dd/MM/yyyy').format(trip['startDate'].toLocal());
     String formattedEndDate = DateFormat('dd/MM/yyyy').format(trip['endDate'].toLocal());
+
+    Completer<void> completer = Completer<void>();
 
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Detalhes da Viagem'),
-          content: Container(
+          title: Text('Detalhes Detalhes da Solicitação'),
+          content: SizedBox(
             width: 300.0,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -270,8 +372,15 @@ class Requests extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () {
                         updateTripStatus(trip['_id'].$oid.toString(), 'Aprovado');
+                        sendEmail(
+                          name:  user.name,
+                          email: user.login,
+                          subject: 'Resposta da Solicitação de ausência OMC GROUP',
+                          message: 'Aprovado',
+                        );
                         Navigator.pop(context);
                         _reloadPage(context);
+                        completer.complete(); // Complete the future when done
                       },
                       style: ElevatedButton.styleFrom(primary: Colors.green),
                       child: Text('Aprovar'),
@@ -279,8 +388,16 @@ class Requests extends StatelessWidget {
                     ElevatedButton(
                       onPressed: () {
                         updateTripStatus(trip['_id'].$oid.toString(), 'Recusado');
+                        sendEmail(
+                          name:  user.name,
+                          email: user.login,
+                          subject: 'Resposta da Solicitação de ausência OMC GROUP',
+                          message: 'Recusado',
+                        );
+
                         Navigator.pop(context);
                         _reloadPage(context);
+                        completer.complete(); // Complete the future when done
                       },
                       style: ElevatedButton.styleFrom(primary: Colors.red),
                       child: Text('Rejeitar'),
@@ -293,7 +410,10 @@ class Requests extends StatelessWidget {
         );
       },
     );
+
+    return completer.future; // Return the future
   }
+
 
   void _reloadPage(BuildContext context) {
     Navigator.pushReplacement(
