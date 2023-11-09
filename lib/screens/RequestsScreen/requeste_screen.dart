@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:mongo_dart/mongo_dart.dart' as mongo;
 import 'package:intl/intl.dart';
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'package:gantt_chart/gantt_chart.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -184,12 +181,10 @@ class Requests extends StatelessWidget {
         );
       } else {
         print('User not found');
-        // You can throw an exception or return a default user if needed
         throw Exception('User not found');
       }
     } catch (e) {
       print('Error fetching user: $e');
-      // You can throw an exception or return a default user if needed
       throw Exception('Error fetching user');
     }
   }
@@ -355,8 +350,8 @@ class Requests extends StatelessWidget {
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text('Detalhes da Solicitação'),
-          content: SizedBox(
-            width: 300.0,
+          content: Container(
+            width: 800.0,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
@@ -391,13 +386,11 @@ class Requests extends StatelessWidget {
                       ),
                       ElevatedButton(
                         onPressed: () async {
-                          // Abre o modal para adicionar motivo
                           String? reason = await _showRejectionModal(context);
                           if (reason != null) {
                             isRejected = true;
                             rejectionReason = reason;
 
-                            // Envie o email e atualize o status
                             sendEmail(
                               name: user.name,
                               email: user.login,
@@ -407,7 +400,7 @@ class Requests extends StatelessWidget {
                             updateTripStatus(trip['_id'].$oid.toString(), 'Recusado');
                           }
 
-                          Navigator.pop(context); // Feche o modal após todas as operações
+                          Navigator.pop(context);
                           _reloadPage(context);
                           completer.complete();
                         },
@@ -426,6 +419,7 @@ class Requests extends StatelessWidget {
     return completer.future;
   }
 
+
   Future<String?> _showRejectionModal(BuildContext context) async {
     Completer<String?> completer = Completer<String?>();
 
@@ -435,35 +429,44 @@ class Requests extends StatelessWidget {
         String rejectionReason = '';
         return AlertDialog(
           title: Text('Motivo da Rejeição'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Informe o motivo da rejeição:'),
-              TextField(
-                onChanged: (value) {
-                  rejectionReason = value;
-                },
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.all(16.0),
+          content: Container(
+            width: double.maxFinite,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('Informe o motivo da rejeição:'),
+                SizedBox(height: 8),
+                TextField(
+                  onChanged: (value) {
+                    rejectionReason = value;
+                  },
+                  maxLines: 5,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-              ),
-              SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: () {
-                  completer.complete(rejectionReason);
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(primary: Colors.red),
-                child: Text('Confirmar'),
-              ),
-            ],
+              ],
+            ),
           ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                completer.complete(rejectionReason);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(primary: Colors.red),
+              child: Text('Confirmar'),
+            ),
+          ],
         );
       },
     );
 
     return completer.future;
   }
+
+
 
 
 

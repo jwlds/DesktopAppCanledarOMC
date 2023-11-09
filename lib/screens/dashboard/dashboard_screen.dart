@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:omc_sis_calendar/screens/dashboard/components/my_calendar.dart';
+import 'package:omc_sis_calendar/screens/dashboard/components/calendar_admin.dart';
 import 'package:omc_sis_calendar/responsive.dart';
 
 import '../../constants.dart';
@@ -32,11 +33,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
-                  flex: 5,
+                  flex: 30, // Adjust the flex factor according to your preference
                   child: Column(
                     children: [
-
-                      MyCalendarWidget(userId: widget.userId),
+                      if (widget.isAdmin)
+                        CalendarAdm(userId: widget.userId),
+                      if (!widget.isAdmin)
+                        MyCalendarWidget(userId: widget.userId),
                       if (Responsive.isMobile(context))
                         SizedBox(height: defaultPadding),
                     ],
@@ -46,10 +49,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   SizedBox(width: defaultPadding),
               ],
             )
+
           ],
         ),
       ),
     );
   }
 }
+
 

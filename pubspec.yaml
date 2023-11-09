@@ -51,6 +51,9 @@ dependencies:
   gantt_chart: ^0.3.0
   table_calendar: ^3.0.9
   http: ^1.1.0
+  cell_calendar: ^0.8.0
+  cr_calendar: ^1.2.1
+  syncfusion_flutter_calendar: ^23.1.44
 
 dev_dependencies:
   flutter_test:

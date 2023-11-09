@@ -53,7 +53,7 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 SizedBox(
-                  width: 200,
+                  width: 400,
                   child: TextField(
                     controller: usernameController,
                     style: TextStyle(color: Colors.white),
@@ -66,7 +66,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
                 const SizedBox(height: 16),
                 SizedBox(
-                  width: 200,
+                  width: 400,
                   child: TextField(
                     controller: passwordController,
                     obscureText: true,
@@ -126,7 +126,7 @@ class _LoginPageState extends State<LoginPage> {
                   },
                   style: ElevatedButton.styleFrom(
                     primary: Colors.blue[900],
-                    minimumSize: const Size(200, 50),
+                    minimumSize: const Size(400, 50),
                   ),
                   child: isLoading
                       ? CircularProgressIndicator(
